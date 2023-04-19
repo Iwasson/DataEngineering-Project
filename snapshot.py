@@ -10,7 +10,7 @@ import json
 import requests
 import sqlite3
 from loguru import logger
-from typing import Tuple
+from typing import List, Tuple
 
 def download_data(url: str) -> json:
   """
@@ -23,10 +23,11 @@ def download_data(url: str) -> json:
     return data.json()
   except json.JSONDecodeError:
       logger.warning(f"Error Getting URL: {url}")
+      logger.warning(f"Response: {data.text}")
       sys.exit(1)
    
 
-def parse_data(data: json) -> Tuple :
+def parse_data(data: json) -> List[tuple] :
   """
   Takes in the json data from the website and converts it
   into usable data for insertion into a DB and Kafka
@@ -34,34 +35,34 @@ def parse_data(data: json) -> Tuple :
   Returns a List of tuples and a dictionary
   """
   
-  kafka_data = {}
+  # kafka_data = {}
   sql_data = []
   for row in data:
     tupe = sql_parse(row)
     sql_data.append(tupe)
 
-    kafka_parse(kafka_data, row)
+    # kafka_parse(kafka_data, row)
 
-  return sql_data, kafka_data
+  return sql_data
 
 
-def kafka_parse(kafka_data: dict, row: dict) -> None :
-  """
-  Take in a row and group it by vehicle ID and date
+# def kafka_parse(kafka_data: dict, row: dict) -> None :
+#   """
+#   Take in a row and group it by vehicle ID and date
 
-  Returns None
-  """
-  vehicle_id = row["VEHICLE_ID"]
-  opd_date = row["OPD_DATE"]
+#   Returns None
+#   """
+#   vehicle_id = row["VEHICLE_ID"]
+#   opd_date = row["OPD_DATE"]
 
-  if vehicle_id == "": vehicle_id = "NOT_GIVEN"
-  if opd_date == "": opd_date = "NOT_GIVEN"
+#   if vehicle_id == "": vehicle_id = "NOT_GIVEN"
+#   if opd_date == "": opd_date = "NOT_GIVEN"
 
-  key = f"{vehicle_id} | {opd_date}"
-  if key not in kafka_data.keys():
-    kafka_data[key] = []
+#   key = f"{vehicle_id} | {opd_date}"
+#   if key not in kafka_data.keys():
+#     kafka_data[key] = []
   
-  kafka_data[key].append(row)
+#   kafka_data[key].append(row)
 
 
 def sql_parse(row: dict) -> Tuple:
@@ -135,9 +136,9 @@ def get_snapshot():
   logger.info(f"Getting data from: {url}")
   data = download_data(url)
   logger.info(f"Got {len(data)} number of entries...")
-  logger.info("Parsing data...")
-  sql_data, kafka_data = parse_data(data)
-  logger.info("Storing data in trimet.db...")
-  store_data(sql_data)
+  # logger.info("Parsing data...")
+  # sql_data = parse_data(data)
+  # logger.info("Storing data in trimet.db...")
+  # store_data(sql_data)
   logger.info(f"Done!")
-  return kafka_data
+  return data

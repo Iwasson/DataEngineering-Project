@@ -1,5 +1,5 @@
 import json
-import zlib
+from time import sleep
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer
@@ -31,15 +31,33 @@ if __name__ == '__main__':
         logger.debug(f'Produced event to topic {topic}: key = {msg.key()}')
 
     topic = 'sensor-data'
-    data = get_snapshot()
+    # data = get_snapshot()
+    with open('snapshots/trimet_data.json', 'r') as f:
+       data = json.load(f)
 
     # Compress each value and send to topic
-    for key in data.keys():
-      value = json.dumps(data[key])
-      comp_val = zlib.compress(value.encode())
+    # for key in data.keys():
+      # value = json.dumps(data[key])
+      # comp_val = zlib.compress(value.encode())
+    buffer_size = 100000
+    count = 0 
+    for row in data:
+      key = f'{row["VEHICLE_ID"]} | {row["OPD_DATE"]}'
+      producer.produce(topic, json.dumps(row), key, callback=delivery_callback)
+      count += 1
 
-      producer.produce(topic, comp_val, key, callback=delivery_callback)
+      # Flush the buffer to prevent overflow
+      if count >= buffer_size:
+        producer.poll(buffer_size)
+        producer.flush()
+        logger.info('Maximum buffer reached, flushing buffer')
+        count = 0
+
+    # for i in range(10):
+    #   key = f'{data[i]["VEHICLE_ID"]} | {data[i]["OPD_DATE"]}'
+    #   producer.produce(topic, json.dumps(data[i]), key, callback=delivery_callback)
+
       
     # Block until the messages are sent.
-    producer.poll(10000)
+    producer.poll(buffer_size)
     producer.flush()

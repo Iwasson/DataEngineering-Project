@@ -36,10 +36,9 @@ if __name__ == '__main__':
 
     # Poll for new messages from Kafka and print them.
     try:
-        valid_rows = 0
-        invalid_rows = 0
-        valid_data = {}
-        invalid_data = {}
+        # invalid_rows = 0
+        data = []
+        # invalid_data = {}
         while True:
             msg = consumer.poll(1.0)
             if msg is None:
@@ -53,40 +52,44 @@ if __name__ == '__main__':
             else:
                 # Decompress and decode key-value pair
                 key = msg.key().decode('utf-8')
-                comp_val = zlib.decompress(msg.value())
-                value = json.loads(comp_val.decode('utf-8'))
+                # comp_val = zlib.decompress(msg.value())
+                value = msg.value().decode('utf-8')
+                data.append(json.loads(value))
 
                 # Keep valid and invalid data separate
-                if 'NOT_GIVEN' in key:
-                    invalid_data[key] = value
-                    invalid_rows += len(value)
-                else:
-                    date = key.split(' | ')[1]
-                    if date not in valid_data.keys():
-                        valid_data[date] = []
-                    valid_data[date].append(dict({key: value}))
-                    valid_rows += len(value)
+                # if 'NOT_GIVEN' in key:
+                #     invalid_data[key] = value
+                #     invalid_rows += len(value)
+                # else:
+                #     date = key.split(' | ')[1]
+                #     if date not in valid_data.keys():
+                #         valid_data[date] = []
+                #     valid_data[date].append(dict({key: value}))
+                #     valid_rows += len(value)
                 logger.debug(f"Consumed event from topic {topic}: key = {key}")
     except KeyboardInterrupt:
         pass
     finally:
-        dir = path.dirname(__file__)
-        
+        if len(data) > 0:
+            date = f'{data[0]["OPD_DATE"]}'
+            with open(f'snapshots/{date}.json', 'w') as f:
+                f.write(json.dumps(data))
+            logger.info(f'Records consumed from {topic}: {len(data)}')
         # Store valid data in file denoted by date
-        for date in valid_data.keys():
-            file = f'{dir}/snapshots/{date}.json'
-            with open(file, 'a') as fp:
-                fp.write(json.dumps(valid_data, indent=4))
-        logger.info(f'Valid rows read from {topic}: {valid_rows}')
+        # for date in valid_data.keys():
+        #     file = f'{dir}/snapshots/{date}.json'
+        #     with open(file, 'a') as fp:
+        #         fp.write(json.dumps(valid_data, indent=4))
+        # logger.info(f'Valid rows read from {topic}: {valid_rows}')
 
         # Collect all invalid data in one file
-        if invalid_data != {}:
-            file = f'{dir}/snapshots/invalid_data.json'
-            with open(file, 'a') as fp:
-                fp.write(json.dumps(invalid_data, indent=4))
-        logger.info(f'Invalid rows read from {topic}: {invalid_rows}')
+        # if invalid_data != {}:
+        #     file = f'{dir}/snapshots/invalid_data.json'
+        #     with open(file, 'a') as fp:
+        #         fp.write(json.dumps(invalid_data, indent=4))
+        # logger.info(f'Invalid rows read from {topic}: {invalid_rows}')
 
-        logger.info(f'Total rows read: {invalid_rows + valid_rows}')
+        # logger.info(f'Total rows read: {invalid_rows + valid_rows}')
 
         # Leave group and commit final offsets
         consumer.close()
