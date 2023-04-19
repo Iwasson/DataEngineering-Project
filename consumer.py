@@ -1,10 +1,14 @@
 import json
-import zlib
+import sys
+from time import perf_counter
 from os import path
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 from loguru import logger
+
+logger.remove()
+logger.add(sys.stderr, level='INFO')
 
 if __name__ == '__main__':
     # Parse the command line.
@@ -32,64 +36,44 @@ if __name__ == '__main__':
 
     # Subscribe to topic
     topic = 'sensor-data'
-    consumer.subscribe([topic], on_assign=reset_offset)
+    try:
+        consumer.subscribe([topic], on_assign=reset_offset)
+    except KeyError as exc:
+        raise KeyError(f'Unable to subscribe to {topic}: {exc}')
 
     # Poll for new messages from Kafka and print them.
     try:
-        # invalid_rows = 0
         data = []
-        # invalid_data = {}
+        start = perf_counter()
         while True:
             msg = consumer.poll(1.0)
             if msg is None:
+                if len(data) > 0:
+                    logger.info(f'Finished consuming events from {topic}. Storing data...')
+                    break
+
                 # Initial message consumption may take up to
                 # `session.timeout.ms` for the consumer group to
                 # rebalance and start consuming
-                logger.info('Finished consumption, storing data locally')
-                break
+                logger.info('Waiting...')
             elif msg.error():
                 logger.error(f'ERROR: {msg.error()}')
             else:
-                # Decompress and decode key-value pair
                 key = msg.key().decode('utf-8')
-                # comp_val = zlib.decompress(msg.value())
                 value = msg.value().decode('utf-8')
                 data.append(json.loads(value))
 
-                # Keep valid and invalid data separate
-                # if 'NOT_GIVEN' in key:
-                #     invalid_data[key] = value
-                #     invalid_rows += len(value)
-                # else:
-                #     date = key.split(' | ')[1]
-                #     if date not in valid_data.keys():
-                #         valid_data[date] = []
-                #     valid_data[date].append(dict({key: value}))
-                #     valid_rows += len(value)
+                end = perf_counter()
                 logger.debug(f"Consumed event from topic {topic}: key = {key}")
+                if end - start > 5:
+                    logger.info(f'Number of events consumed: {len(data)}')
+                    start = perf_counter()
     except KeyboardInterrupt:
         pass
     finally:
-        if len(data) > 0:
+        if data != []:
             date = f'{data[0]["OPD_DATE"]}'
             with open(f'snapshots/{date}.json', 'w') as f:
                 f.write(json.dumps(data))
-            logger.info(f'Records consumed from {topic}: {len(data)}')
-        # Store valid data in file denoted by date
-        # for date in valid_data.keys():
-        #     file = f'{dir}/snapshots/{date}.json'
-        #     with open(file, 'a') as fp:
-        #         fp.write(json.dumps(valid_data, indent=4))
-        # logger.info(f'Valid rows read from {topic}: {valid_rows}')
-
-        # Collect all invalid data in one file
-        # if invalid_data != {}:
-        #     file = f'{dir}/snapshots/invalid_data.json'
-        #     with open(file, 'a') as fp:
-        #         fp.write(json.dumps(invalid_data, indent=4))
-        # logger.info(f'Invalid rows read from {topic}: {invalid_rows}')
-
-        # logger.info(f'Total rows read: {invalid_rows + valid_rows}')
-
-        # Leave group and commit final offsets
         consumer.close()
+        logger.info(f'Records consumed from {topic}: {len(data)}')

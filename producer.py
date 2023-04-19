@@ -1,10 +1,13 @@
+import sys
 import json
-from time import sleep
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer
 from snapshot import get_snapshot
 from loguru import logger
+
+logger.remove()
+logger.add(sys.stderr, level='INFO')
 
 if __name__ == '__main__':
     # Parse the command line.
@@ -35,29 +38,31 @@ if __name__ == '__main__':
     with open('snapshots/trimet_data.json', 'r') as f:
        data = json.load(f)
 
-    # Compress each value and send to topic
-    # for key in data.keys():
-      # value = json.dumps(data[key])
-      # comp_val = zlib.compress(value.encode())
     buffer_size = 100000
     count = 0 
+
+    # Test producer dataset
+    # for i in range(100):
+    #   key = f'{data[i]["VEHICLE_ID"]} | {data[i]["OPD_DATE"]}'
+    #   producer.produce(topic, json.dumps(data[i]), key, callback=delivery_callback)
+    #   count += 1
+
     for row in data:
       key = f'{row["VEHICLE_ID"]} | {row["OPD_DATE"]}'
       producer.produce(topic, json.dumps(row), key, callback=delivery_callback)
       count += 1
+      buffer_size -= 1
 
       # Flush the buffer to prevent overflow
-      if count >= buffer_size:
+      if buffer_size == 0:
         producer.poll(buffer_size)
         producer.flush()
-        logger.info('Maximum buffer reached, flushing buffer')
-        count = 0
+        buffer_size = 100000
+        logger.info(f'Maximum buffer reached, flushing buffer. Number of records transmitted: {count}')
 
-    # for i in range(10):
-    #   key = f'{data[i]["VEHICLE_ID"]} | {data[i]["OPD_DATE"]}'
-    #   producer.produce(topic, json.dumps(data[i]), key, callback=delivery_callback)
-
-      
     # Block until the messages are sent.
     producer.poll(buffer_size)
     producer.flush()
+
+    assert len(data) == count
+    logger.info(f'size of original data: {len(data)}... total records transmitted: {count}')
