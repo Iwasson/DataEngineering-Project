@@ -1,3 +1,11 @@
+"""
+Primary Kafka producer that collects the JSON breadcrumb records
+retrieved by the snapshot.py script and sends each record individually
+to the sensor-data topic.
+
+Note: Kafka can only produce 100000 events before its buffer needs to
+be flushed.
+"""
 import sys
 import json
 from argparse import ArgumentParser, FileType
@@ -35,18 +43,14 @@ if __name__ == '__main__':
 
   topic = 'sensor-data'
   # data = get_snapshot()
-  with open('snapshots/trimet_data.json', 'r') as f:
+
+  with open('snapshots/trimet_test_data.json', 'r') as f:
     data = json.load(f)
 
   buffer_size = 100000
   count = 0 
 
-  # Test producer dataset
-  # for i in range(100):
-  #   key = f'{data[i]["VEHICLE_ID"]} | {data[i]["OPD_DATE"]}'
-  #   producer.produce(topic, json.dumps(data[i]), key, callback=delivery_callback)
-  #   count += 1
-
+  # Transmit each record individually to the topic
   for row in data:
     key = f'{row["VEHICLE_ID"]} | {row["OPD_DATE"]}'
     producer.produce(topic, json.dumps(row), key, callback=delivery_callback)

@@ -1,3 +1,7 @@
+"""
+Consumer whose only purpose is to consume all messages in a topic
+for the purposes of debugging.
+"""
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
