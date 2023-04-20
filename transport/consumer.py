@@ -7,33 +7,37 @@ Snapshot filenames are derived from the date the consumer is run.
 """
 import json
 import sys
+import os
 from datetime import date
 from confluent_kafka import Consumer
 from loguru import logger
 
-import kafka_api as kapi
+import kafka_api as kafka
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
 
 if __name__ == '__main__':
   # Create Consumer instance
-  config, args = kapi.parse_config(is_consumer=True)
+  config, args = kafka.parse_config(is_consumer=True)
   consumer = Consumer(config)
 
   # Subscribe to topic
   topic = 'sensor-data'
-  kapi.subscribe(topic, consumer, args)
+  kafka.subscribe(topic, consumer, args)
 
   # Consume events
+  data = []
   try:
-    data = kapi.consume_events(topic, consumer, logger)
+    data = kafka.consume_events(topic, consumer, logger)
   except KeyboardInterrupt:
     pass
   finally:
     # Store data in snapshot file
     if data != []:
-      with open(f'../snapshots/{date.today()}.json', 'w') as f:
+      path = '../snapshots'
+      if not os.path.exists(path): os.makedirs(path)
+      with open(f'{path}/{date.today()}.json', 'w') as f:
         f.write(json.dumps(data))
 
     consumer.close()

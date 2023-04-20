@@ -6,22 +6,23 @@ import sys
 from confluent_kafka import Consumer
 from loguru import logger
 
-import kafka_api as kapi
+import kafka_api as kafka
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
 
 if __name__ == '__main__':
-  config, args = kapi.parse_config(is_consumer=True)
+  config, args = kafka.parse_config(is_consumer=True)
   consumer = Consumer(config)
 
   # Subscribe to topic
   topic = "sensor-data"
-  kapi.subscribe(topic, consumer, args)
+  kafka.subscribe(topic, consumer, args)
 
   # Poll for new messages from Kafka and print them.
+  data = []
   try:
-    data = kapi.consume_events(topic, consumer, logger)
+    data = kafka.consume_events(topic, consumer, logger)
   except KeyboardInterrupt:
     pass
   finally:

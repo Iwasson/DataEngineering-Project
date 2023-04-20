@@ -11,14 +11,14 @@ import json
 from confluent_kafka import Producer
 from loguru import logger
 
-import kafka_api as kapi
+import kafka_api as kafka
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
 
 if __name__ == '__main__':
   # Create Producer instance
-  config, args = kapi.parse_config()
+  config, args = kafka.parse_config()
   producer = Producer(config)
 
   topic = 'sensor-data'
@@ -27,5 +27,5 @@ if __name__ == '__main__':
   with open('../snapshots/trimet_test_data.json', 'r') as f:
     data = json.load(f)
 
-  count = kapi.produce_events(topic, data, producer, logger)
+  count = kafka.produce_events(topic, data, producer, logger)
   logger.info(f'Size of original data: {len(data)}... Total records transmitted: {count}')
