@@ -77,6 +77,7 @@ def store_data(data: List[dict], logger):
     with open(f'{path}/{file}', 'w') as f:
       f.write(json.dumps(data))
     logger.info(f'{count} rows written to {file}')
+  else: logger.info(f'No data to store')
 
   return count
 
