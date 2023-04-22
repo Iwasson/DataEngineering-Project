@@ -109,7 +109,7 @@ def store_data(parsed_data: json) -> None:
   conn.commit()
 
 
-def gather_data():
+def get_snapshot():
   url = "http://www.psudataeng.com:8000/getBreadCrumbData"
   logger.info(f"Getting data from: {url}")
   data = download_data(url)

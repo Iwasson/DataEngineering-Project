@@ -10,7 +10,7 @@ import sys
 from confluent_kafka import Producer
 from loguru import logger
 
-from gather_data import gather_data
+from snapshot import get_snapshot
 import kafka_api as kafka
 
 logger.remove()
@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
   # Gather data from API
   topic = 'sensor-data'
-  data = gather_data()
+  data = get_snapshot()
 
   # Produce events with Kafka
   count = kafka.produce_events(topic, data, producer, logger)
