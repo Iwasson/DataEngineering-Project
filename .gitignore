@@ -1,4 +1,4 @@
 trimet.db
 *.ini
 __pycache__/
-snapshots/
+snapshots/*.json

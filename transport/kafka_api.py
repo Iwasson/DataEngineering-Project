@@ -73,7 +73,6 @@ def store_data(data: List[dict], logger):
   if count > 0:
     path = '../snapshots'
     file = f'{date.today()}.json'
-    if not os.path.exists(path): os.makedirs(path)
   
     with open(f'{path}/{file}', 'w') as f:
       f.write(json.dumps(data))
