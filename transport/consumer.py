@@ -4,11 +4,10 @@ the sensor-data topic, organizing them into a list of dictionaries
 which is then written to a file in the snapshots folder.
 
 Snapshot filenames are derived from the date the consumer is run.
+
+Give the --flush flag to flush the topic without storing the data.
 """
-import json
 import sys
-import os
-from datetime import date
 from confluent_kafka import Consumer
 from loguru import logger
 
@@ -27,18 +26,7 @@ if __name__ == '__main__':
   kafka.subscribe(topic, consumer, args)
 
   # Consume events
-  data = []
-  try:
-    data = kafka.consume_events(topic, consumer, logger)
-  except KeyboardInterrupt:
-    pass
-  finally:
-    # Store data in snapshot file
-    if data != []:
-      path = '../snapshots'
-      if not os.path.exists(path): os.makedirs(path)
-      with open(f'{path}/{date.today()}.json', 'w') as f:
-        f.write(json.dumps(data))
+  count = kafka.consume_events(topic, consumer, args.flush, logger)
 
-    consumer.close()
-    logger.info(f'Records consumed from {topic}: {len(data)}')
+  consumer.close()
+  logger.info(f'Total rows consumed from {topic}: {count}')

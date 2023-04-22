@@ -1,8 +1,15 @@
+"""
+Kafka API functionality common throughout producer & consumer files.
+"""
+
 import json
+import os
+from datetime import date
 from time import perf_counter
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import OFFSET_BEGINNING
+
 
 def parse_config(is_consumer = False):
   """
@@ -11,6 +18,7 @@ def parse_config(is_consumer = False):
   parser = ArgumentParser()
   parser.add_argument('config_file', type=FileType('r'))
   parser.add_argument('--reset', action='store_true')
+  parser.add_argument('--flush', action='store_true')
   args = parser.parse_args()
 
   # Parse the configuration.
@@ -21,6 +29,7 @@ def parse_config(is_consumer = False):
   if is_consumer: config.update(config_parser['consumer'])
 
   return config, args
+
 
 def subscribe(topic, consumer, args):
 
@@ -36,31 +45,63 @@ def subscribe(topic, consumer, args):
   except KeyError as exc:
     raise KeyError(f'Unable to subscribe to {topic}: {exc}')
 
-def consume_events(topic, consumer, logger):
+
+def consume_events(topic, consumer, flush, logger):
   data = []
   start = perf_counter()
-  while True:
-    msg = consumer.poll(1.0)
-    if msg is None:
-      # Initial message consumption may take up to
-      # `session.timeout.ms` for the consumer group to
-      # rebalance and start consuming
-      logger.info('Waiting...')
-    elif msg.error():
-      logger.error(f'ERROR: {msg.error()}')
-    else:
-      # Decode message, convert to json, append to dataset
-      key = msg.key().decode('utf-8')
-      value = msg.value().decode('utf-8')
-      data.append(json.loads(value))
-      logger.debug(f"Consumed event from topic {topic}: key = {key}")
+  try:
+    while True:
+      msg = consumer.poll(1.0)
+      if msg is None:
+        # Initial message consumption may take up to
+        # `session.timeout.ms` for the consumer group to
+        # rebalance and start consuming
+        logger.info('Waiting...')
+      elif msg.error():
+        logger.error(f'ERROR: {msg.error()}')
+      else:
+        parse_row(msg, topic, data, logger)
 
-      # Send update messages every ~5 seconds
-      end = perf_counter()
-      if end - start > 5:
-        logger.info(f'Number of events consumed: {len(data)}')
-        start = perf_counter()
-  return data
+        # Send update messages every ~5 seconds
+        end = perf_counter()
+        if end - start > 5:
+          logger.info(f'Number of events consumed: {len(data)}')
+          start = perf_counter()
+  except KeyboardInterrupt:
+    pass
+  finally:
+    if flush: return len(data)
+    return store_data(data, logger)
+
+
+def parse_row(msg, topic, data, logger):
+  """
+  Decode message, convert to json, append to dataset
+  """
+  key = msg.key().decode('utf-8')
+  value = msg.value().decode('utf-8')
+  data.append(json.loads(value))
+  logger.debug(f"Consumed event from topic {topic}: key = {key}")
+
+
+def store_data(data, logger):
+  """
+  Store data in a snapshot file if any has been retrieved
+
+  Returns an int
+  """
+  count = len(data)
+  if count > 0:
+    path = '../snapshots'
+    file = f'{date.today()}.json'
+    if not os.path.exists(path): os.makedirs(path)
+  
+    with open(f'{path}/{file}', 'w') as f:
+      f.write(json.dumps(data))
+    logger.info(f'{count} rows written to {file}')
+
+  return count
+
 
 def produce_events(topic, data, producer, logger):
   

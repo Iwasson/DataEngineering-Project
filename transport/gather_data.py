@@ -32,7 +32,7 @@ def parse_data(data: json) -> List[tuple] :
   Takes in the json data from the website and converts it
   into usable data for insertion into a DB and Kafka
 
-  Returns a List of tuples and a dictionary
+  Returns a List of tuples
   """
   
   sql_data = []
@@ -109,7 +109,7 @@ def store_data(parsed_data: json) -> None:
   conn.commit()
 
 
-def get_snapshot():
+def gather_data():
   url = "http://www.psudataeng.com:8000/getBreadCrumbData"
   logger.info(f"Getting data from: {url}")
   data = download_data(url)
