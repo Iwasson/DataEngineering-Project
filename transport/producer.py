@@ -7,6 +7,8 @@ Note: Kafka can only queue 100000 events before its buffer needs to
 be flushed.
 """
 import sys
+import os
+from datetime import date
 from confluent_kafka import Producer
 from loguru import logger
 
@@ -27,4 +29,8 @@ if __name__ == '__main__':
 
   # Produce events with Kafka
   count = kafka.produce_events(topic, data, producer, logger)
-  logger.info(f'Size of original data: {len(data)}... Total records transmitted: {count}')
+  msg = f'{date.today()}: Size of original data: {len(data)}. Total records transmitted: {count}'
+  logger.info(msg)
+  with open(f'{os.path.dirname(__file__)}../log.txt', 'a') as f:
+    f.write(msg)
+

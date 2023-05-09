@@ -75,7 +75,7 @@ def store_data(data: dict, file, logger) -> None:
 
   json.dump(data, file)
   file.write("\n")
-  #logger.info(f'data appended to {file.name}')
+  logger.debug(f'data appended to {file.name}')
 
 def consume_events(topic: str, consumer: Consumer, flush: bool, logger) -> int:
   """
@@ -87,20 +87,19 @@ def consume_events(topic: str, consumer: Consumer, flush: bool, logger) -> int:
   data_count = 0
   start = perf_counter()
   try:
-    path = f'{os.path.dirname(__file__)}/../snapshots'
-    file = f'{date.today()}.json'
-    f = open(f'{path}/{file}', 'a')
+    if not flush:
+      path = f'{os.path.dirname(__file__)}/../snapshots'
+      file = f'{date.today()}.json'
+      f = open(f'{path}/{file}', 'a')
     while True:
       msg = consumer.poll(1.0)
       if msg is None:
-        # Initial message consumption may take up to
-        # `session.timeout.ms` for the consumer group to
-        # rebalance and start consuming
         logger.info('Waiting...')
       elif msg.error():
         logger.error(f'ERROR: {msg.error()}')
       else:
-        store_data(parse_row(msg, topic, logger), f, logger)
+        if not flush:
+          store_data(parse_row(msg, topic, logger), f, logger)
         data_count += 1
 
         # Send update messages every ~5 seconds
@@ -111,7 +110,9 @@ def consume_events(topic: str, consumer: Consumer, flush: bool, logger) -> int:
   except KeyboardInterrupt:
     pass
   finally:
-    if flush: return data_count
+    if not flush:
+      with open(f'{os.path.dirname(__file__)}../log.txt', 'a') as f:
+        f.write(f'{date.today()}: Consumed {data_count} records\n')
     return data_count
 
 
