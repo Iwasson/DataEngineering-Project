@@ -2,3 +2,4 @@ trimet.db
 *.ini
 __pycache__/
 snapshots/*.json
+*log.txt
