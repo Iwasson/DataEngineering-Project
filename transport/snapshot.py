@@ -6,9 +6,11 @@ It will then parse this JSON data and add it to a SQLite3 DB
 in an effort to conserve disk space.
 """
 import sys
+import os
 import json
 import requests
 import sqlite3
+from datetime import date
 from loguru import logger
 from typing import List, Tuple
 
@@ -37,35 +39,10 @@ def parse_data(data: json) -> List[tuple] :
   
   sql_data = []
   for row in data:
-    tupe = sql_parse(row)
+    tupe = tuple(row.values())
     sql_data.append(tupe)
 
   return sql_data
-
-
-def sql_parse(row: dict) -> Tuple:
-  """
-  Convert non-string fields to the appropriate type and
-  set empty fields to 0.
-
-  Returns a tuple
-  """
-
-  cols = list(row.values())
-  for index, col in enumerate(cols):
-    if col == "":
-        cols[index] = 0
-
-  return (int(cols[0]),
-        int(cols[1]),
-        str(cols[2]),
-        int(cols[3]),
-        int(cols[4]),
-        int(cols[5]),
-        float(cols[6]),
-        float(cols[7]),
-        float(cols[8]),
-        float(cols[9]))
 
 
 def store_data(parsed_data: json) -> None:
@@ -73,7 +50,8 @@ def store_data(parsed_data: json) -> None:
   Takes in a json object and stores that data in a sqlite3 DB
   Returns None
   """
-  conn = sqlite3.connect("trimet.db")
+  path = f"{os.path.dirname(__file__)}/../archive/{date.today()}.db"
+  conn = sqlite3.connect(path)
   cur = conn.cursor()
 
   # creates a table if it does not exist
@@ -104,6 +82,7 @@ def store_data(parsed_data: json) -> None:
   VALUES(?,?,?,?,?,?,?,?,?,?)
   """
 
+  logger.info(f"Writing data to {path}")
   for row in parsed_data:
      cur.execute(insert_sql, row)
   conn.commit()
@@ -115,8 +94,7 @@ def get_snapshot():
   data = download_data(url)
   logger.info(f"Got {len(data)} number of entries...")
   logger.info("Parsing data...")
-  #sql_data = parse_data(data)
-  #logger.info("Storing data in trimet.db...")
-  #store_data(sql_data)
+  sql_data = parse_data(data)
+  store_data(sql_data)
   logger.info(f"Done!")
   return data
