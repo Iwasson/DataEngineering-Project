@@ -93,7 +93,7 @@ def consume_events(topic: str, consumer: Consumer, flush: bool, logger) -> int:
         failed_polls += 1
 
         # Exit if consumer has failed 30 times
-        if failed_polls >= 30:
+        if flush and failed_polls >= 30:
           break
       elif msg.error():
         logger.error(f'ERROR: {msg.error()}')
