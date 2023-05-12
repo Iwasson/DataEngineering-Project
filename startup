@@ -15,3 +15,6 @@ echo "alias curvenv='source ./venv/bin/activate'" >> ~/.bashrc
 # Create data folders
 mkdir snapshots
 mkdir archive
+
+# Set python path to import modules from anywhere
+export PYTHONPATH=$(pwd)
