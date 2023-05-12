@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
   # Produce events with Kafka
   count = produce_events(topic, data, producer, logger)
-  msg = f'{date.today()}: Size of original data: {len(data)}. Total records transmitted: {count}'
+  msg = f'{date.today()}: Size of original data: {len(data)}. Total records transmitted: {count}\n'
   logger.info(msg)
   with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as f:
     f.write(msg)
