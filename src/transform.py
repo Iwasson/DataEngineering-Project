@@ -12,6 +12,8 @@
 """
 
 import sys
+import os
+import json
 from pandas import DataFrame
 from typing import List
 from loguru import logger
@@ -21,9 +23,10 @@ logger.remove()
 logger.add(sys.stderr, level='INFO')
 
 FILTERED_COLUMNS = ['GPS_SATELLITES', 'GPS_HDOP']
-INDEX = ['EVENT_NO_TRIP', 'EVENT_NO_STOP', 'VEHICLE_ID']
+INDEX = ['EVENT_NO_TRIP', 'VEHICLE_ID']
 
-def filter_invalid(data: List[dict]) -> List[dict]:
+
+def filter_invalid_fields(data: List[dict]) -> List[dict]:
     """
     Filter out all rows that are invalid and cannot be analyzed.
 
@@ -57,14 +60,69 @@ def filter_invalid(data: List[dict]) -> List[dict]:
         return valid
     return list(filter(lambda row: is_invalid(row), data))
 
-def transform(data: List[dict]) -> DataFrame:
-    valid_data = filter_invalid(data)
-    logger.info(f'Filtered {len(data) - len(valid_data)} records')            
 
+def log_write(msg: str) -> None:
+    """
+    Write to log file located in root dir
+
+    Returns None
+    """
+    with open(f'{os.path.dirname(__file__)}/../../log.txt', 'a') as log:
+      log.write(msg + '\n')
+
+
+def filter_invalid_trips(df: DataFrame) -> DataFrame:
+
+    # Get distinct indexes and isolate find any that have have repeat trip IDs
+    combos = df.index.unique()
+    trip_ids = [ index[0] for index in combos ] 
+    duplicates = [ id for id in trip_ids if trip_ids.count(id) > 1 ]
+
+    # Remove all records associated with invalid trips 
+    bad_indexes = []
+    try:
+        assert len(duplicates) == 0
+    except AssertionError:
+        bad_indexes = [ index for index in combos if index[0] in duplicates ]
+        msg = f'Filtered rows with trip IDs that have more than one vehicle: {bad_indexes}'
+        logger.info(msg)
+        log_write(msg)
+
+    # Max trip length in meters derived from Portland's approximate area
+    max_trip_length = 19400
+
+    if len(bad_indexes) > 0: df = df.drop(index=bad_indexes)
+    return df
+    
+
+# def transform(data: List[dict]) -> DataFrame:
+def transform() -> DataFrame:
+    with open('test_data.json', 'r') as f:
+        data: list = json.load(f)
+
+    valid_data = filter_invalid_fields(data)
+    msg = f'Filtered {len(data) - len(valid_data)} records that fail existence/range checks'
+    logger.info(msg)            
+    log_write(msg)
+
+    valid_data.append({
+        "EVENT_NO_TRIP": 231428692,
+        "EVENT_NO_STOP": 231428706,
+        "OPD_DATE": "04JAN2023:00:00:00",
+        "VEHICLE_ID": 1234,
+        "METERS": 26948,
+        "ACT_TIME": 57151,
+        "GPS_LONGITUDE": -122.73209,
+        "GPS_LATITUDE": 45.487085,
+        "GPS_SATELLITES": 12.0,
+        "GPS_HDOP": 0.7
+    })
     df = DataFrame.from_records(valid_data, index=INDEX, exclude=FILTERED_COLUMNS)
-    # Make sure every trip ID has a single vehicle ID
+    df = filter_invalid_trips(df)
+
     # Calculate the change in meters for each trip and validate
     # Create and validate timestamps
     # Create and validate speed 
-    print(df.loc['EVENT_NO_TRIP'])
+
     return df
+transform()
