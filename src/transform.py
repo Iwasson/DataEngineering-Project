@@ -3,21 +3,25 @@
 - Every record must have a vehicle ID
 - Every record must have an odometer reading
 - The location indicated by the longitude and latitude values must be in Portland
-- Every record with a particular trip ID must have matching vehicle IDs (assuming a “trip” is defined as a route taken by a single vehicle)
+- Every record with a particular trip ID must have matching vehicle IDs
 - The time at a stop must be between 0 and 86400
-- The odometer reading should never be greater than 250000 miles
-- A vehicle must not travel more than 2000 miles in a day
-- The total distance traveled throughout a completed route must be less than or equal to the length between the two furthest points in Oregon
-- There should be fewer than one thousand different vehicles
+- The odometer reading should never be greater than 1000000 miles
+- The speed of a vehicle must not exceed 100 miles an hour
+- The total distance traveled throughout a completed trip must be less than or equal to Portland's approximate diameter
+- The timestamp should be earlier than the current datetime
 """
 
 import sys
-import pandas as pd
+from pandas import DataFrame
 from typing import List
 from loguru import logger
+from datetime import datetime, timedelta
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
+
+FILTERED_COLUMNS = ['GPS_SATELLITES', 'GPS_HDOP']
+INDEX = ['EVENT_NO_TRIP', 'EVENT_NO_STOP', 'VEHICLE_ID']
 
 def filter_invalid(data: List[dict]) -> List[dict]:
     """
@@ -36,7 +40,7 @@ def filter_invalid(data: List[dict]) -> List[dict]:
 
         # If all required values exist
         for key in row.keys():
-            if key not in ['GPS_SATELLITES', 'GPS_HDOP'] and row[key] is None:
+            if key not in FILTERED_COLUMNS and row[key] is None:
                 logger.debug(f'None value found for {key} belonging to {row}')
                 valid = False
                 break
@@ -53,8 +57,14 @@ def filter_invalid(data: List[dict]) -> List[dict]:
         return valid
     return list(filter(lambda row: is_invalid(row), data))
 
-def validate(data: List[dict]):
+def transform(data: List[dict]) -> DataFrame:
     valid_data = filter_invalid(data)
     logger.info(f'Filtered {len(data) - len(valid_data)} records')            
-    df = pd.DataFrame.from_records(valid_data)
-    print(df)
+
+    df = DataFrame.from_records(valid_data, index=INDEX, exclude=FILTERED_COLUMNS)
+    # Make sure every trip ID has a single vehicle ID
+    # Calculate the change in meters for each trip and validate
+    # Create and validate timestamps
+    # Create and validate speed 
+    print(df.loc['EVENT_NO_TRIP'])
+    return df

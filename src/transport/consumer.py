@@ -10,7 +10,7 @@ Give the --flush flag to flush the topic without storing the data.
 import sys
 import os
 import json
-from datetime import date
+from datetime import datetime
 from confluent_kafka import Consumer
 from argparse import Namespace
 from loguru import logger
@@ -18,7 +18,7 @@ from time import perf_counter
 from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
 from producer import parse_config
-from transform.validate import validate
+from src.transform import transform
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
@@ -103,8 +103,8 @@ def consume_events(topic: str, consumer: Consumer) -> int:
   except KeyboardInterrupt:
     pass
   finally:
-    msg = f'{date.today()}: Consumed {len(data)} records.\n'
-    with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as log:
+    msg = f'{datetime.now()}: Consumed {len(data)} records.\n'
+    with open(f'{os.path.dirname(__file__)}/../../log.txt', 'a') as log:
       log.write(msg)
     logger.info(msg)
     return data
@@ -125,4 +125,4 @@ if __name__ == '__main__':
   # Validate and transform data if not flushing
   if args.flush: logger.info('Flushed data.')
   else:
-    validate(data)
+    df = transform(data)

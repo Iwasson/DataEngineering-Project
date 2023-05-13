@@ -50,7 +50,7 @@ def store_data(parsed_data: json) -> None:
   Takes in a json object and stores that data in a sqlite3 DB
   Returns None
   """
-  path = f"{os.path.dirname(__file__)}/../archive/{date.today()}.db"
+  path = f"{os.path.dirname(__file__)}/../../archive/{date.today()}.db"
   conn = sqlite3.connect(path)
   cur = conn.cursor()
 
