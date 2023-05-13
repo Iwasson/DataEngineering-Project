@@ -104,4 +104,3 @@ if __name__ == '__main__':
   logger.info(msg)
   with open(f'{os.path.dirname(__file__)}/../../log.txt', 'a') as f:
     f.write(msg)
-

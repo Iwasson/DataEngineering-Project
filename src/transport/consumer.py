@@ -126,3 +126,4 @@ if __name__ == '__main__':
   if args.flush: logger.info('Flushed data.')
   else:
     df = transform(data)
+    print(df.describe())
