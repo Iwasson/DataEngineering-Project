@@ -7,14 +7,14 @@
 - The time at a stop must be between 0 and 86400
 - The odometer reading should never be greater than 1000000 miles
 - The speed of a vehicle must not exceed 100 miles an hour
-- The total distance traveled throughout a completed trip must be less than or equal to Portland's approximate diameter
+- The distance traveled by a vehicle in a day must not exceed 2,300,000 meters (60mph for 24hours)
 - The timestamp should be earlier than the current datetime
 """
 
 import sys
 import os
 import json
-from pandas import DataFrame
+from pandas import DataFrame, Timestamp, Series
 from typing import List
 from loguru import logger
 from datetime import datetime, timedelta
@@ -23,7 +23,6 @@ logger.remove()
 logger.add(sys.stderr, level='INFO')
 
 FILTERED_COLUMNS = ['GPS_SATELLITES', 'GPS_HDOP']
-INDEX = ['EVENT_NO_TRIP', 'VEHICLE_ID']
 
 
 def filter_invalid_fields(data: List[dict]) -> List[dict]:
@@ -74,8 +73,8 @@ def log_write(msg: str) -> None:
 def filter_invalid_trips(df: DataFrame) -> DataFrame:
 
     # Get distinct indexes and isolate find any that have have repeat trip IDs
-    combos = df.index.unique()
-    trip_ids = [ index[0] for index in combos ] 
+    indexes = df.index.unique()
+    trip_ids = [ index[0] for index in indexes ] 
     duplicates = [ id for id in trip_ids if trip_ids.count(id) > 1 ]
 
     # Remove all records associated with invalid trips 
@@ -83,21 +82,64 @@ def filter_invalid_trips(df: DataFrame) -> DataFrame:
     try:
         assert len(duplicates) == 0
     except AssertionError:
-        bad_indexes = [ index for index in combos if index[0] in duplicates ]
+        bad_indexes = [ index for index in indexes if index[0] in duplicates ]
+        df = df.drop(index=bad_indexes)
         msg = f'Filtered rows with trip IDs that have more than one vehicle: {bad_indexes}'
         logger.info(msg)
         log_write(msg)
 
-    # Max trip length in meters derived from Portland's approximate area
-    max_trip_length = 19400
-
-    if len(bad_indexes) > 0: df = df.drop(index=bad_indexes)
     return df
-    
+
+
+def create_timestamps(df: DataFrame) -> DataFrame:
+  timestamps = []
+
+  def decode_time(row: Series) -> None:
+    # Extract datetime info
+    date = row['OPD_DATE'].split(':')[0]
+    seconds = row['ACT_TIME']
+
+    # Convert seconds to a time
+    delta = timedelta(seconds=seconds)
+    delta_seconds = timedelta(seconds=delta.seconds)
+
+    # Create timestamp and append to list of timestamps
+    timestamp = datetime.strptime(f'{date}:{str(delta_seconds)}', '%d%b%Y:%H:%M:%S')
+    timestamp += timedelta(delta.days)
+    timestamps.append(Timestamp(timestamp))    
+
+    # Log invalid timestamps
+    try:
+        assert timestamp < datetime.now()
+    except AssertionError:
+        msg = f'WARNING: Future timestamp {timestamp} associated with {row}'
+        logger.warning(msg)
+        log_write(msg)
+
+  # Map function across rows to collect timestamps
+  df.apply(decode_time, axis=1)
+
+  # Insert timestamp column and drop redundant columns
+  df.insert(1, "Timestamp", timestamps, True)
+  return df.drop(columns=['OPD_DATE', 'ACT_TIME'])
+
+
+def create_speeds(df: DataFrame) -> DataFrame:
+    # Divide df into trips
+    # For each trip
+        # If only one reading, set speed to 0
+        # Otherwise, start with the second reading
+        # calculate the speed and set the speed
+        # if index == 1: set speed of index 0 to current speed
+    indexes = df.index.unique()
+    trips = []
+    for index in indexes:
+        trips.append(df.loc[index])
+    print(len(trips))
 
 # def transform(data: List[dict]) -> DataFrame:
 def transform() -> DataFrame:
-    with open('test_data.json', 'r') as f:
+    with open('../snapshots/test_data.json', 'r') as f:
         data: list = json.load(f)
 
     valid_data = filter_invalid_fields(data)
@@ -105,24 +147,14 @@ def transform() -> DataFrame:
     logger.info(msg)            
     log_write(msg)
 
-    valid_data.append({
-        "EVENT_NO_TRIP": 231428692,
-        "EVENT_NO_STOP": 231428706,
-        "OPD_DATE": "04JAN2023:00:00:00",
-        "VEHICLE_ID": 1234,
-        "METERS": 26948,
-        "ACT_TIME": 57151,
-        "GPS_LONGITUDE": -122.73209,
-        "GPS_LATITUDE": 45.487085,
-        "GPS_SATELLITES": 12.0,
-        "GPS_HDOP": 0.7
-    })
-    df = DataFrame.from_records(valid_data, index=INDEX, exclude=FILTERED_COLUMNS)
+    df = DataFrame.from_records(
+        valid_data,
+        index=['EVENT_NO_TRIP', 'VEHICLE_ID'], 
+        exclude=FILTERED_COLUMNS).sort_index()
     df = filter_invalid_trips(df)
-
-    # Calculate the change in meters for each trip and validate
-    # Create and validate timestamps
-    # Create and validate speed 
+    df = create_timestamps(df)
+    df = create_speeds(df)
+    # print(df)
 
     return df
 transform()
