@@ -18,7 +18,7 @@ from time import perf_counter
 from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
 from producer import parse_config
-from transform.validation import validate
+from transform.validate import validate
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
@@ -77,15 +77,9 @@ def consume_events(topic: str, consumer: Consumer) -> int:
 
   Returns an int
   """
-  # data_count = 0
   failed_polls = 0
   start_time = perf_counter()
   try:
-    # Create snapshot file
-    # if not flush:
-    #   path = f'{os.path.dirname(__file__)}/../snapshots'
-    #   file = f'{date.today()}.json'
-    #   f = open(f'{path}/{file}', 'a')
     data = []
     while True:
       msg = consumer.poll(1.0)
@@ -93,17 +87,13 @@ def consume_events(topic: str, consumer: Consumer) -> int:
         logger.info('Waiting...')
         failed_polls += 1
 
-        # Exit if consumer has failed 30 times
-        if failed_polls >= 30:
+        # Exit if consumer has finished reading messages
+        if failed_polls >= 10:
           break
       elif msg.error():
         logger.error(f'ERROR: {msg.error()}')
       else:
-        # Only write to file if not flushing messages
-        # if not flush:
-        #   store_data(parse_row(msg, topic, logger), f, logger)
         data.append(parse_row(msg, topic))
-        # data_count += 1
 
         # Send update messages every ~5 seconds
         end_time = perf_counter()
@@ -118,13 +108,6 @@ def consume_events(topic: str, consumer: Consumer) -> int:
       log.write(msg)
     logger.info(msg)
     return data
-    # if not flush:
-    #   f.close()
-    #   msg += 'Written to file.\n'
-    # else: msg += 'Flushed.\n'
-
-    # lf.write(msg)
-    # lf.close()
 
 if __name__ == '__main__':
   # Create Consumer instance
@@ -139,6 +122,7 @@ if __name__ == '__main__':
   data = consume_events(topic, consumer)
   consumer.close()
 
+  # Validate and transform data if not flushing
   if args.flush: logger.info('Flushed data.')
   else:
     validate(data)
