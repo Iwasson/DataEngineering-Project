@@ -10,14 +10,15 @@ Give the --flush flag to flush the topic without storing the data.
 import sys
 import os
 import json
-from datetime import date
+from datetime import datetime
 from confluent_kafka import Consumer
 from argparse import Namespace
 from loguru import logger
 from time import perf_counter
-from producer import parse_config
 from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
+from producer import parse_config
+from src.transform import transform
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
@@ -41,7 +42,7 @@ def subscribe(topic: str, consumer: Consumer, args: Namespace) -> None:
     raise KeyError(f'Unable to subscribe to {topic}: {exc}')
 
 
-def parse_row(msg: Message, topic: str, logger) -> None:
+def parse_row(msg: Message, topic: str) -> None:
   """
   Decode message, convert to dict
 
@@ -54,7 +55,7 @@ def parse_row(msg: Message, topic: str, logger) -> None:
   return data
 
 
-def store_data(data: dict, file, logger) -> None:
+def store_data(data: dict, file) -> None:
   """
   Store data in a snapshot file if any has been retrieved
 
@@ -69,60 +70,44 @@ def store_data(data: dict, file, logger) -> None:
   logger.debug(f'data appended to {file.name}')
 
 
-def consume_events(topic: str, consumer: Consumer, flush: bool, logger) -> int:
+def consume_events(topic: str, consumer: Consumer) -> int:
   """
   Poll the topic, consuming events until an interrupt.
   Save captured data to a file unless flush flag given.
 
   Returns an int
   """
-  data_count = 0
   failed_polls = 0
   start_time = perf_counter()
   try:
-    # Create snapshot file
-    if not flush:
-      path = f'{os.path.dirname(__file__)}/../snapshots'
-      file = f'{date.today()}.json'
-      f = open(f'{path}/{file}', 'a')
-
+    data = []
     while True:
       msg = consumer.poll(1.0)
       if msg is None:
         logger.info('Waiting...')
         failed_polls += 1
 
-        # Exit if consumer has failed 30 times
-        if flush and failed_polls >= 30:
+        # Exit if consumer has finished reading messages
+        if failed_polls >= 10:
           break
       elif msg.error():
         logger.error(f'ERROR: {msg.error()}')
       else:
-        # Only write to file if not flushing messages
-        if not flush:
-          store_data(parse_row(msg, topic, logger), f, logger)
-        data_count += 1
+        data.append(parse_row(msg, topic))
 
         # Send update messages every ~5 seconds
         end_time = perf_counter()
         if end_time - start_time > 5:
-          logger.info(f'Number of events consumed: {data_count}')
+          logger.info(f'Number of events consumed: {len(data)}')
           start_time = perf_counter()
   except KeyboardInterrupt:
     pass
-  # Close snapshot file and write to log
   finally:
-    lf = open(f'{os.path.dirname(__file__)}/../log.txt', 'a')
-    msg = f'{date.today()}: Consumed {data_count} records. '
-
-    if not flush:
-      f.close()
-      msg += 'Written to file.\n'
-    else: msg += 'Flushed.\n'
-
+    msg = f'{datetime.now()}: Consumed {len(data)} records.\n'
+    with open(f'{os.path.dirname(__file__)}/../../log.txt', 'a') as log:
+      log.write(msg)
     logger.info(msg)
-    lf.write(msg)
-    lf.close()
+    return data
 
 if __name__ == '__main__':
   # Create Consumer instance
@@ -134,5 +119,11 @@ if __name__ == '__main__':
   subscribe(topic, consumer, args)
 
   # Consume events
-  consume_events(topic, consumer, args.flush, logger)
+  data = consume_events(topic, consumer)
   consumer.close()
+
+  # Validate and transform data if not flushing
+  if args.flush: logger.info('Flushed data.')
+  else:
+    df = transform(data)
+    print(df.describe())

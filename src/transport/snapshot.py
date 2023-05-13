@@ -12,7 +12,7 @@ import requests
 import sqlite3
 from datetime import date
 from loguru import logger
-from typing import List, Tuple
+from typing import List
 
 def download_data(url: str) -> json:
   """
@@ -50,21 +50,22 @@ def store_data(parsed_data: json) -> None:
   Takes in a json object and stores that data in a sqlite3 DB
   Returns None
   """
-  path = f"{os.path.dirname(__file__)}/../archive/{date.today()}.db"
+  path = f"{os.path.dirname(__file__)}/../../archive/{date.today()}.db"
   conn = sqlite3.connect(path)
   cur = conn.cursor()
 
-  # creates a table if it does not exist
-  create_sql = """CREATE TABLE IF NOT EXISTS trimet (EVENT_NO_TRIP integer, 
-                                                    EVENT_NO_STOP integer, 
-                                                    OPD_DATE text, 
-                                                    VEHICLE_ID integer, 
-                                                    METERS integer,
-                                                    ACT_TIME integer, 
-                                                    VELOCITY real, 
-                                                    DIRECTION real, 
-                                                    RADIO_QUALITY real, 
-                                                    GPS_LONGITUDE real)
+  # Prevent duplicate values when running producer more than once in a day
+  cur.execute("""DROP TABLE IF EXISTS trimet""")
+  create_sql = """CREATE TABLE trimet (EVENT_NO_TRIP integer, 
+                                        EVENT_NO_STOP integer, 
+                                        OPD_DATE text, 
+                                        VEHICLE_ID integer, 
+                                        METERS integer,
+                                        ACT_TIME integer, 
+                                        VELOCITY real, 
+                                        DIRECTION real, 
+                                        RADIO_QUALITY real, 
+                                        GPS_LONGITUDE real)
     """
   cur.execute(create_sql)
   
