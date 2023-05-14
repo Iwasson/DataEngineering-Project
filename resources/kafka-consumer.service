@@ -1,0 +1,13 @@
+[Unit]
+Description=Kafka consumer service script
+After=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+User=kdugas
+WorkingDirectory=/home/kdugas/DataEngineering-Project/transport
+ExecStart=/usr/bin/python3 consumer.py kafka.ini
+
+[Install]
+WantedBy=multi-user.target

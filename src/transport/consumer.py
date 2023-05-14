@@ -17,8 +17,10 @@ from loguru import logger
 from time import perf_counter
 from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
+
 from producer import parse_config
 from src.transform import transform
+from src.transport.postgres import save_df_to_postgres
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
@@ -127,3 +129,4 @@ if __name__ == '__main__':
   else:
     df = transform(data)
     print(df.describe())
+    save_df_to_postgres(df)
