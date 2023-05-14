@@ -99,7 +99,7 @@ def insert_row(index, row, conn):
   trip_id = index[0]
 
   route_id = row["EVENT_NO_STOP"]
-  vehicle_id = 1234
+  vehicle_id = index[1]
   service_key = 'Weekday'
   direction = 'Out'
 
