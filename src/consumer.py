@@ -19,8 +19,8 @@ from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
 
 from producer import parse_config
-from src.transform import transform
-from src.transport.postgres import save_df_to_postgres
+from transform import transform
+from postgres import save_df_to_postgres
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
