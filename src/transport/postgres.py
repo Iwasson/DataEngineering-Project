@@ -92,6 +92,7 @@ def insert_row(row, conn):
   Inserts a single row into a table
   """
   cursor = conn.cursor()
+  print(row)
   tstamp = row["Timestamp"]
   latitude = row["GPS_LATITUDE"]
   longitude = row["GPS_LONGITUTDE"]
