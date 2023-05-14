@@ -103,7 +103,7 @@ def insert_row(index, row, conn):
   route_id = row["EVENT_NO_STOP"]
   vehicle_id = 1234
   service_key = 'Weekday'
-  direction = 0
+  direction = 'Out'
 
   sql_trip  = f"""
   INSERT INTO trip (trip_id, route_id, vehicle_id, service_key, direction) 
