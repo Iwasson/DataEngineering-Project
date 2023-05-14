@@ -39,7 +39,7 @@ def make_tables() -> None:
   sql_tripdir_type = "create type tripdir_type as enum ('Out', 'Back');"
 
   sql_crumb = """
-  CREATE TABLE IF NOT EXISTS BreadCrump (
+  CREATE TABLE IF NOT EXISTS BreadCrumb (
     tstamp timestamp,
     latitude float,
     longitude float,
@@ -87,9 +87,41 @@ def make_tables() -> None:
     logger.error(e)
     sys.exit(1)
 
+def insert_row(row, conn):
+  """
+  Inserts a single row into a table
+  """
+  cursor = conn.cursor()
+  tstamp = row["Timestamp"]
+  latitude = row["GPS_LATITUDE"]
+  longitude = row["GPS_LONGITUTDE"]
+  speed = row["Speed"]
+  trip_id = row.index[0]
+
+  route_id = row["EVENT_NO_STOP"]
+  vehicle_id = 1234
+  service_key = 'Weekday'
+  direction = 0
+
+  sql_trip  = f"""
+  INSERT INTO trip (trip_id, route_id, vehicle_id, service_key, direction) 
+  VALUES ({trip_id}, {route_id}, {vehicle_id}, {service_key}, {direction})"""
+  
+  sql_crumb = f"""
+  INSERT INTO breadcrumb (tstamp, latitude, longitude, speed, trip_id) 
+  VALUES ({tstamp}, {latitude}, {longitude}, {speed}, {trip_id})"""
+
+  cursor.execute(sql_trip)
+  conn.commit()
+  cursor.execute(sql_crumb)
+  conn.commit()
+
 def save_df_to_postgres(dataframe: DataFrame):
   """
   Saves a pandas dataframe to postgres. 
   """
   make_tables()
+  conn = connect()
 
+  for row in dataframe:
+    insert_row(row, conn)
