@@ -96,7 +96,7 @@ def insert_row(index, row, conn):
   print(row)
   tstamp = row["Timestamp"]
   latitude = row["GPS_LATITUDE"]
-  longitude = row["GPS_LONGITUTDE"]
+  longitude = row["GPS_LONGITUDE"]
   speed = row["Speed"]
   trip_id = index[0]
 
