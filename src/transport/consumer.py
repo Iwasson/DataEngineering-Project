@@ -129,6 +129,4 @@ if __name__ == '__main__':
   else:
     df = transform(data)
     print(df.describe())
-    print(list(df))
-    print(list(df.index.values))
     save_df_to_postgres(df)
