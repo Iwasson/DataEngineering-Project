@@ -128,5 +128,5 @@ if __name__ == '__main__':
   if args.flush: logger.info('Flushed data.')
   else:
     df = transform(data)
-    print(df.describe())
+    #print(df.describe())
     save_df_to_postgres(df)
