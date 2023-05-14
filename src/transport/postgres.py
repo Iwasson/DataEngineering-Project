@@ -107,7 +107,7 @@ def insert_row(index, row, conn):
 
   sql_trip  = f"""
   INSERT INTO trip (trip_id, route_id, vehicle_id, service_key, direction) 
-  VALUES ({trip_id}, {route_id}, {vehicle_id}, '{service_key}', {direction})"""
+  VALUES ({trip_id}, {route_id}, {vehicle_id}, '{service_key}', '{direction}')"""
   
   sql_crumb = f"""
   INSERT INTO breadcrumb (tstamp, latitude, longitude, speed, trip_id) 
