@@ -19,8 +19,8 @@ from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
 
 from producer import parse_config
-from src.transform import transform
-from src.transport.postgres import save_df_to_postgres
+from transform import transform
+from postgres import save_df_to_postgres
 
 logger.remove()
 logger.add(sys.stderr, level='INFO')
@@ -106,7 +106,7 @@ def consume_events(topic: str, consumer: Consumer) -> int:
     pass
   finally:
     msg = f'{datetime.now()}: Consumed {len(data)} records.\n'
-    with open(f'{os.path.dirname(__file__)}/../../log.txt', 'a') as log:
+    with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as log:
       log.write(msg)
     logger.info(msg)
     return data

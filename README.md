@@ -1,5 +1,12 @@
 # No Data 'Bout It
 
+## Commands
+
+- To access PostgresDB: `sudo -u postgres psql postgres`
+- To see the tables listed, run `\dt`
+- systemctl service files located in `sudo vim /etc/systemd/system/<servicefile>`
+- Run `journalctl -r` to see the latest systemd log output
+
 ## Resources
 
 Temporary link farm

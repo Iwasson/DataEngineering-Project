@@ -59,7 +59,7 @@ def log_write(msg: str) -> None:
 
     Returns None
     """
-    with open(f"{os.path.dirname(__file__)}/../../log.txt", "a") as log:
+    with open(f"{os.path.dirname(__file__)}/../log.txt", "a") as log:
         log.write(msg + "\n")
 
 

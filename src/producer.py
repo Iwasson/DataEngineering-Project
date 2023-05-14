@@ -102,5 +102,5 @@ if __name__ == '__main__':
   count = produce_events(topic, data, producer, logger)
   msg = f'{datetime.now()}: Size of original data: {len(data)}. Total records transmitted: {count}\n'
   logger.info(msg)
-  with open(f'{os.path.dirname(__file__)}/../../log.txt', 'a') as f:
+  with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as f:
     f.write(msg)
