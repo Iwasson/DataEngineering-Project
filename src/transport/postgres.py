@@ -63,17 +63,19 @@ def make_tables() -> None:
   # attempt to create the types, this can fail so we will except it
   try:
     cursor.execute(sql_service_type)
-    conn.commit()
   except (Exception, psycopg2.DatabaseError) as e:
     logger.warning(e)
     pass
+  finally:
+    conn.commit()
 
   try:
     cursor.execute(sql_tripdir_type)
-    conn.commit()
   except (Exception, psycopg2.DatabaseError) as e:
     logger.warning(e)
     pass
+  finally:
+    conn.commit()
 
   # attempt to create the tables, the sql should prevent this from
   # duplicated tables, and no error should occur
