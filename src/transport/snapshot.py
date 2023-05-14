@@ -96,6 +96,6 @@ def get_snapshot():
   logger.info(f"Got {len(data)} number of entries...")
   logger.info("Parsing data...")
   sql_data = parse_data(data)
-  store_data(sql_data)
+  #store_data(sql_data)
   logger.info(f"Done!")
   return data

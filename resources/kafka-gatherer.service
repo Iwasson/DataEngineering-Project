@@ -1,0 +1,14 @@
+[Unit]
+Description=Kafka gatherer service script
+After=multi-user.target
+
+[Service]
+Type=simple
+Restart=on-failure
+User=kdugas
+WorkingDirectory=/home/kdugas/DataEngineering-Project/transport
+ExecStartPre=/usr/bin/python3 consumer.py kafka.ini --flush
+ExecStart=/usr/bin/python3 producer.py kafka.ini
+
+[Install]
+WantedBy=multi-user.target
