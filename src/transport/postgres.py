@@ -111,7 +111,7 @@ def insert_row(index, row, conn):
   
   sql_crumb = f"""
   INSERT INTO breadcrumb (tstamp, latitude, longitude, speed, trip_id) 
-  VALUES ({tstamp}, {latitude}, {longitude}, {speed}, {trip_id})"""
+  VALUES ('{tstamp}', {latitude}, {longitude}, {speed}, {trip_id})"""
 
   cursor.execute(sql_trip)
   conn.commit()
