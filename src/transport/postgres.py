@@ -87,17 +87,18 @@ def make_tables() -> None:
     logger.error(e)
     sys.exit(1)
 
-def insert_row(row, conn):
+def insert_row(index, row, conn):
   """
   Inserts a single row into a table
   """
   cursor = conn.cursor()
+  print(index)
   print(row)
   tstamp = row["Timestamp"]
   latitude = row["GPS_LATITUDE"]
   longitude = row["GPS_LONGITUTDE"]
   speed = row["Speed"]
-  trip_id = row.index[0]
+  trip_id = index[0]
 
   route_id = row["EVENT_NO_STOP"]
   vehicle_id = 1234
@@ -124,5 +125,5 @@ def save_df_to_postgres(dataframe: DataFrame):
   make_tables()
   conn = connect()
 
-  for row in dataframe:
-    insert_row(row, conn)
+  for index, row in dataframe.iterrows():
+    insert_row(index, row, conn)
