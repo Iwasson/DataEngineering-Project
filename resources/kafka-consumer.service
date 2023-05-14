@@ -6,7 +6,7 @@ After=multi-user.target
 Type=simple
 Restart=always
 User=kdugas
-WorkingDirectory=/home/kdugas/DataEngineering-Project/transport
+WorkingDirectory=/home/kdugas/DataEngineering-Project/src
 ExecStart=/usr/bin/python3 consumer.py kafka.ini
 
 [Install]

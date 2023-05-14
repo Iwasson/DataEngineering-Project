@@ -106,7 +106,7 @@ def consume_events(topic: str, consumer: Consumer) -> int:
     pass
   finally:
     msg = f'{datetime.now()}: Consumed {len(data)} records.\n'
-    with open(f'{os.path.dirname(__file__)}/../../log.txt', 'a') as log:
+    with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as log:
       log.write(msg)
     logger.info(msg)
     return data

@@ -6,7 +6,7 @@ After=multi-user.target
 Type=simple
 Restart=on-failure
 User=kdugas
-WorkingDirectory=/home/kdugas/DataEngineering-Project/transport
+WorkingDirectory=/home/kdugas/DataEngineering-Project/src
 ExecStartPre=/usr/bin/python3 consumer.py kafka.ini --flush
 ExecStart=/usr/bin/python3 producer.py kafka.ini
 
