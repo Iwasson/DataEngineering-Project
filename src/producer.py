@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime
 from confluent_kafka import Producer
-from argparse import ArgumentParser, FileType
+from argparse import ArgumentParser
 from configparser import ConfigParser
 from confluent_kafka import Producer, Message
 from loguru import logger
@@ -29,18 +29,19 @@ def parse_config(is_consumer: bool = False) -> Tuple:
   Returns a tuple
   """
   parser = ArgumentParser()
-  parser.add_argument('config_file', type=FileType('r'))
   parser.add_argument('--reset', action='store_true')
   parser.add_argument('--flush', action='store_true')
+  parser.add_argument('--trip', action='store_true')
   args = parser.parse_args()
 
   # Parse the configuration.
   # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
   config_parser = ConfigParser()
-  config_parser.read_file(args.config_file)
+  with open(f'{os.path.dirname(__file__)}/kafka.ini', 'r') as config_file:
+    config_parser.read_file(config_file)
   config = dict(config_parser['default'])
-  if is_consumer: config.update(config_parser['consumer'])
 
+  if is_consumer: config.update(config_parser['consumer'])
   return config, args
 
 
@@ -68,10 +69,14 @@ def produce_events(topic: str, data: List[dict], producer: Producer, logger) -> 
 
   buffer_size = 100000
   count = 0 
+  print(len(data))
 
   # Transmit each record individually to the topic
   for row in data:
-    key = f'{row["VEHICLE_ID"]} | {row["OPD_DATE"]}'
+    if topic == 'sensor-data':
+      key = f'{row["VEHICLE_ID"]} | {row["OPD_DATE"]}'
+    else: key = 'Some key' 
+
     producer.produce(topic, json.dumps(row), key, callback=delivery_callback)
     count += 1
     buffer_size -= 1
@@ -83,9 +88,10 @@ def produce_events(topic: str, data: List[dict], producer: Producer, logger) -> 
       buffer_size = 100000
       logger.info(f'Flushing buffer. Number of records transmitted: {count}')
 
-  # Block until the messages are sent.
-  producer.poll(buffer_size)
-  producer.flush()
+  if count > 0:
+    # Block until the messages are sent.
+    producer.poll(buffer_size)
+    producer.flush()
   return count
 
 
@@ -95,12 +101,17 @@ if __name__ == '__main__':
   producer = Producer(config)
 
   # Gather data from API
-  topic = 'sensor-data'
-  data = get_snapshot()
+  if args.trip:
+    topic = 'trip-data'
+    # Replace with web scraper
+    data = []
+  else:
+    topic = 'sensor-data'
+    data = get_snapshot()
 
   # Produce events with Kafka
   count = produce_events(topic, data, producer, logger)
-  msg = f'{datetime.now()}: Size of original data: {len(data)}. Total records transmitted: {count}\n'
+  msg = f'{datetime.now()}: Size of original data: {len(data)}. Total records transmitted to {topic}: {count}\n'
   logger.info(msg)
   with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as f:
     f.write(msg)
