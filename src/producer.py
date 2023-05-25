@@ -76,7 +76,7 @@ def produce_events(topic: str, data: List[dict], producer: Producer, logger) -> 
   for row in data:
     if topic == 'sensor-data':
       key = f'{row["VEHICLE_ID"]} | {row["OPD_DATE"]}'
-    else: key = 'Some key' 
+    else: key = f'{row["date"]} | {row["event_number"]}' 
 
     producer.produce(topic, json.dumps(row), key, callback=delivery_callback)
     count += 1
