@@ -19,6 +19,7 @@ from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
 from producer import parse_config
 from transform_breadcrumbs import transform_breadcrumbs
+from transform_trips import transform_trips
 from postgres import save_df_to_postgres
 
 logger.remove()
@@ -131,5 +132,5 @@ if __name__ == '__main__':
     df = transform_breadcrumbs(data)
     save_df_to_postgres(df)
   else:
-    df = transform_stops(data) 
+    df = transform_trips(data) 
     df.describe()
