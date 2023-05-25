@@ -14,10 +14,11 @@ def get_webdata(url: str) -> pd.DataFrame:
   html = urlopen(url)
   soup = BeautifulSoup(html, 'html.parser')
 
-  day = soup.h1.string
-  print(day)
+  h1 = soup.find("h1")
+  date = re.search(r'\d{4}-\d{2}-\d{2}', h1.string).group(0)
   
   dataframe = pd.DataFrame(columns=[
+    "date",
     "event_number",
     "vehicle_number",
     "leave_time",
@@ -80,6 +81,7 @@ def get_webdata(url: str) -> pd.DataFrame:
         schedule_status   = columns[23].string
 
         new_row = pd.DataFrame([{
+          "date"              : date,
           "event_number"      : event_Number,
           "vehicle_number"    : vehicle_number,
           "leave_time"        : leave_time,
@@ -109,8 +111,4 @@ def get_webdata(url: str) -> pd.DataFrame:
 
         dataframe = pd.concat([dataframe, new_row], ignore_index=True)
   
-  return dataframe
-
-data = get_webdata(url)
-
-print(data.describe())
+  return dataframe.to_dict('records')
