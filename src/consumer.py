@@ -105,7 +105,7 @@ def consume_events(topic: str, consumer: Consumer) -> int:
   except KeyboardInterrupt:
     pass
   finally:
-    msg = f'{datetime.now()}: Consumed {len(data)} records.\n'
+    msg = f'{datetime.now()}: Consumed {len(data)} records from {topic}.\n'
     with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as log:
       log.write(msg)
     logger.info(msg)
@@ -117,7 +117,7 @@ if __name__ == '__main__':
   consumer = Consumer(config)
 
   # Subscribe to topic
-  if args.topic:
+  if args.trip:
     topic = 'trip-data'
   else: topic = 'sensor-data'
   subscribe(topic, consumer, args)
@@ -133,4 +133,4 @@ if __name__ == '__main__':
     save_df_to_postgres(df)
   else:
     df = transform_trips(data) 
-    df.describe()
+    print(df.describe())

@@ -7,8 +7,10 @@ Type=simple
 Restart=on-failure
 User=kdugas
 WorkingDirectory=/home/kdugas/DataEngineering-Project/src
-ExecStartPre=/usr/bin/python3 consumer.py kafka.ini --flush
-ExecStart=/usr/bin/python3 producer.py kafka.ini
+ExecStartPre=/usr/bin/python3 consumer.py --flush
+ExecStart=/usr/bin/python3 producer.py
+ExecStartPre=/usr/bin/python3 consumer.py --flush --trip
+ExecStart=/usr/bin/python3 producer.py --trip
 
 [Install]
 WantedBy=multi-user.target

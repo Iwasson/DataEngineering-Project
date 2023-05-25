@@ -16,6 +16,8 @@ from configparser import ConfigParser
 from confluent_kafka import Producer, Message
 from loguru import logger
 from typing import Tuple, List
+
+from webscraper import get_webdata
 from snapshot import get_snapshot
 
 logger.remove()
@@ -69,7 +71,6 @@ def produce_events(topic: str, data: List[dict], producer: Producer, logger) -> 
 
   buffer_size = 100000
   count = 0 
-  print(len(data))
 
   # Transmit each record individually to the topic
   for row in data:
@@ -103,8 +104,7 @@ if __name__ == '__main__':
   # Gather data from API
   if args.trip:
     topic = 'trip-data'
-    # Replace with web scraper
-    data = []
+    data = get_webdata()
   else:
     topic = 'sensor-data'
     data = get_snapshot()

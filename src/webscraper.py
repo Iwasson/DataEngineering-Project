@@ -2,11 +2,12 @@ import re
 import pandas as pd
 import numpy as np
 from urllib.request import urlopen
+from loguru import logger
 from bs4 import BeautifulSoup
 
 url = "http://www.psudataeng.com:8000/getStopEvents"
 
-def get_webdata(url: str) -> pd.DataFrame:
+def get_webdata() -> pd.DataFrame:
   """
   Gets all of the data from the HTML of a webpage
   """
@@ -45,6 +46,8 @@ def get_webdata(url: str) -> pd.DataFrame:
     "data_source",
     "schedule_status"
   ])
+
+  logger.info("Scraping trip data...")
 
   for header in soup.find_all("h2"):
     event_info = re.search(r'-?\d+', header.string).group(0)

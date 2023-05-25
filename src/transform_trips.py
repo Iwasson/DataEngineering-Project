@@ -1,4 +1,5 @@
 import sys
+import os
 from datetime import datetime
 from pandas import DataFrame
 from loguru import logger
@@ -37,6 +38,11 @@ def validate_and_transform(df: DataFrame) -> DataFrame:
     else:
       row['service_key'] = 'Weekday'
     
+  msg = f'Filtered out {len(invalid_indexes)} invalid rows from trip data.'
+  logger.info(msg)
+  with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as log:
+    log.write(msg)
+
   return df.drop(invalid_indexes, axis=0).drop(columns=["date"])
     
 
@@ -57,6 +63,5 @@ def transform_trips(data: List[dict]) -> DataFrame:
   ]
 
   df = DataFrame.from_records(data, columns=columns)
-  df = validate_and_transform(df)
-  return df
+  return validate_and_transform(df)
 
