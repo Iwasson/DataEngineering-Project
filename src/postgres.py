@@ -105,7 +105,6 @@ def make_trip_tables() -> None:
     vehicle_id integer,
     service_key service_type,
     direction tripdir_type,
-    date timestamp,
     PRIMARY KEY (trip_id)
   )
   """
@@ -174,11 +173,10 @@ def insert_webrow(index, row, conn):
   service_key = row["service_key"]
   direction   = row["direction"]
   trip_id     = row["event_number"]
-  date        = row["date"]
 
   sql_trip  = f"""
-  INSERT INTO webtrip (trip_id, route_id, vehicle_id, service_key, direction, date) 
-  VALUES ({trip_id}, {route_id}, {vehicle_id}, '{service_key}', '{direction}', '{date}')
+  INSERT INTO webtrip (trip_id, route_id, vehicle_id, service_key, direction) 
+  VALUES ({trip_id}, {route_id}, {vehicle_id}, '{service_key}', '{direction}')
   ON CONFLICT (trip_id) DO NOTHING"""
 
   cursor.execute(sql_trip)
