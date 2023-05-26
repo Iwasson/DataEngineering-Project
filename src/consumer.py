@@ -17,9 +17,9 @@ from loguru import logger
 from time import perf_counter
 from confluent_kafka import OFFSET_BEGINNING, Consumer, Message
 
-
 from producer import parse_config
-from transform import transform
+from transform_breadcrumbs import transform_breadcrumbs
+from transform_trips import transform_trips
 from postgres import save_df_to_postgres
 
 logger.remove()
@@ -105,7 +105,7 @@ def consume_events(topic: str, consumer: Consumer) -> int:
   except KeyboardInterrupt:
     pass
   finally:
-    msg = f'{datetime.now()}: Consumed {len(data)} records.\n'
+    msg = f'{datetime.now()}: Consumed {len(data)} records from {topic}.\n'
     with open(f'{os.path.dirname(__file__)}/../log.txt', 'a') as log:
       log.write(msg)
     logger.info(msg)
@@ -117,7 +117,9 @@ if __name__ == '__main__':
   consumer = Consumer(config)
 
   # Subscribe to topic
-  topic = 'sensor-data'
+  if args.trip:
+    topic = 'trip-data'
+  else: topic = 'sensor-data'
   subscribe(topic, consumer, args)
 
   # Consume events
@@ -126,7 +128,9 @@ if __name__ == '__main__':
 
   # Validate and transform data if not flushing
   if args.flush: logger.info('Flushed data.')
-  else:
-    df = transform(data)
-    #print(df.describe())
+  elif topic == 'sensor-data':
+    df = transform_breadcrumbs(data)
     save_df_to_postgres(df)
+  else:
+    df = transform_trips(data) 
+    print(df.describe())

@@ -174,7 +174,7 @@ def create_speed_column(df: DataFrame) -> DataFrame:
     return df.drop(columns=['ACT_TIME'])
 
 
-def transform(data: List[dict]) -> DataFrame:
+def transform_breadcrumbs(data: List[dict]) -> DataFrame:
     """
     Validate and transform data into a Dataframe that fits our Postgres schema
 
