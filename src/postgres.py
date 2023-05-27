@@ -45,7 +45,7 @@ def make_tables() -> None:
     longitude float,
     speed float,
     trip_id integer,
-    FOREIGN KEY (trip_id) REFERENCES Trip
+    FOREIGN KEY (trip_id) REFERENCES WebTrip
   )
   """
 
@@ -96,7 +96,7 @@ def make_trip_tables() -> None:
   cursor = conn.cursor()
 
   sql_service_type = "create type service_type as enum ('Weekday', 'Saturday', 'Sunday');"
-  sql_tripdir_type = "create type tripdir_type as enum ('Out', 'Back');"
+  sql_tripdirweb_type = "create type tripdirweb_type as enum ('0', '1');"
 
   sql_webtrip = """
   CREATE TABLE IF NOT EXISTS WebTrip (
@@ -104,7 +104,7 @@ def make_trip_tables() -> None:
     route_id integer,
     vehicle_id integer,
     service_key service_type,
-    direction tripdir_type,
+    direction tripdirweb_type,
     PRIMARY KEY (trip_id)
   )
   """
@@ -119,7 +119,7 @@ def make_trip_tables() -> None:
     conn.commit()
 
   try:
-    cursor.execute(sql_tripdir_type)
+    cursor.execute(sql_tripdirweb_type)
   except (Exception, psycopg2.DatabaseError) as e:
     logger.warning(e)
     pass
@@ -149,7 +149,7 @@ def insert_row(index, row, conn):
   route_id = row["EVENT_NO_STOP"]
   vehicle_id = index[1]
   service_key = 'Weekday'
-  direction = 'Out'
+  direction = '0'
 
   sql_trip  = f"""
   INSERT INTO trip (trip_id, route_id, vehicle_id, service_key, direction) 

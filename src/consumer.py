@@ -135,4 +135,3 @@ if __name__ == '__main__':
   else:
     df = transform_trips(data)
     save_trip_df_to_postgres(df)
-    print(df.describe())
