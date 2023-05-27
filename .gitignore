@@ -5,3 +5,4 @@ snapshots/*.json
 archive/*
 *log.txt
 *.env
+scratch.sql
