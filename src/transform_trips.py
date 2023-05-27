@@ -1,4 +1,5 @@
 import sys
+import json
 import os
 from datetime import datetime
 from pandas import DataFrame
@@ -28,6 +29,9 @@ def validate_and_transform(df: DataFrame) -> DataFrame:
       invalid_indexes.append(i)
       continue
       
+    if row['direction'] == '0': row['direction'] = 'Out'
+    else: row['direction'] = 'Back'
+
     # Use the date to account for holidays or invalid data in the
     # service_key column
     day = datetime.strptime(row['date'], "%Y-%m-%d").weekday()
@@ -64,4 +68,3 @@ def transform_trips(data: List[dict]) -> DataFrame:
 
   df = DataFrame.from_records(data, columns=columns)
   return validate_and_transform(df)
-
