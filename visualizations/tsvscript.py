@@ -9,6 +9,7 @@ def convert(inpath, outpath):
         data = csvfile.readlines()
         for line in data[1:len(data)-1]:
             line.strip()
+            line = line.split('\n')[0]
             row = line.split(",")
             
             # skip the rows where speed is missing
@@ -25,7 +26,7 @@ def convert(inpath, outpath):
                     Feature(
                         geometry = Point((longitude,latitude)),
                         properties = {
-                            'speed': (int(speed))
+                            'speed': (float(speed))
                         }
                     )
                 )
